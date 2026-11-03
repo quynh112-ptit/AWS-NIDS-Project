@@ -1,20 +1,19 @@
 import json
-import joblib
 import numpy as np
+import boto3
 from kafka import KafkaConsumer
 from sklearn.ensemble import RandomForestClassifier
 
-# 1. Giả lập một mô hình ML đã được train
-# (Trong thực tế, bạn sẽ dùng joblib.load('model.pkl') để load mô hình đã train trên dataset thật)
+# Cấu hình AWS SNS (Thay ARN bằng ARN thực tế của bạn sau)
+SNS_TOPIC_ARN = 'arn:aws:sns:us-east-1:123456789012:NIDS-Security-Alerts'
+sns_client = boto3.client('sns', region_name='us-east-1')
+
 print("Đang khởi tạo/Load mô hình Machine Learning...")
 mock_model = RandomForestClassifier()
-# Train tạm trên dữ liệu dummy (Feature: dst_port, packet_size)
-# 0: Normal, 1: Attack (vd: port 22 size lạ, port 3389)
 X_dummy = [[80, 500], [22, 100], [3389, 1500], [443, 1200]]
 y_dummy = [0, 1, 1, 0] 
 mock_model.fit(X_dummy, y_dummy)
 
-# 2. Khởi tạo Kafka Consumer
 consumer = KafkaConsumer(
     'network-traffic',
     bootstrap_servers=['localhost:9092'],
@@ -26,16 +25,22 @@ print("Consumer (ML-IDS) đang lắng nghe trên topic 'network-traffic'...")
 
 for message in consumer:
     data = message.value
-    
-    # Tiền xử lý (Module 04) - Lấy ra các feature cần thiết để đưa vào mô hình
     features = np.array([[data['dst_port'], data['packet_size']]])
-    
-    # Dự đoán (Module 05)
     prediction = mock_model.predict(features)[0]
     
-    # Kết hợp kết quả ML và cờ giả lập để test
     if prediction == 1 or data.get('is_malicious_mock'):
-        print(f"\033[91m[CẢNH BÁO TẤN CÔNG] Phát hiện bất thường từ IP: {data['src_ip']} (Port: {data['dst_port']})\033[0m")
-        # TODO: Ở bước thực tế trên AWS, bạn sẽ chèn code ghi log vào PostgreSQL hoặc đẩy lên S3 tại đây
+        alert_msg = f"CẢNH BÁO: Phát hiện truy cập độc hại!\nIP Nguồn: {data['src_ip']}\nCổng Đích: {data['dst_port']}\nGiao thức: {data['protocol']}"
+        print(f"\033[91m[TẤN CÔNG] {alert_msg}\033[0m")
+        
+        try:
+            response = sns_client.publish(
+                TopicArn=SNS_TOPIC_ARN,
+                Message=alert_msg,
+                Subject='[NIDS ALERT] Phát hiện bất thường mạng'
+            )
+            print(f"Đã gửi cảnh báo thành công (MessageId: {response['MessageId']})")
+        except Exception as e:
+            print(f"Lỗi khi gửi cảnh báo SNS (Bỏ qua): {e}")
+            
     else:
         print(f"\033[92m[Bình thường] Traffic từ {data['src_ip']} an toàn.\033[0m")
