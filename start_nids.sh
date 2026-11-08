@@ -36,6 +36,7 @@ sleep 15
 # ── 6. Set biến môi trường cho Python scripts ───────────────
 export KAFKA_BOOTSTRAP_SERVERS="${EC2_IP}:9092"
 export AWS_DEFAULT_REGION="us-east-1"
+export SNS_TOPIC_ARN="arn:aws:sns:us-east-1:400131408828:NIDS-Alerts"
 # AWS_ACCESS_KEY_ID và AWS_SECRET_ACCESS_KEY đọc từ IAM Role EC2
 # (không cần hardcode nếu EC2 đã được gán IAM Role đúng)
 
