@@ -5,6 +5,10 @@ Sinh NetFlow traffic và gửi vào Kafka.
 Hỗ trợ điều khiển kịch bản qua Kafka topic: nids-control.
 """
 
+from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parent / ".env")
 import json
 import os
 import sys
@@ -28,10 +32,16 @@ except Exception:
 KAFKA_SERVERS = [
     x.strip()
     for x in os.getenv(
-        "KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"
+        "KAFKA_BOOTSTRAP_SERVERS", ""
     ).split(",")
     if x.strip()
 ]
+
+if not KAFKA_SERVERS:
+    raise RuntimeError(
+        "Missing KAFKA_BOOTSTRAP_SERVERS! "
+        "Please configure it in the .env file."
+    )
 
 DATA_TOPIC = "network-traffic"
 CONTROL_TOPIC = "nids-control"
