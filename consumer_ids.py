@@ -1,4 +1,4 @@
-﻿"""
+"""
 Consumer ML-IDS: Lắng nghe Kafka, phân loại traffic bằng mô hình đã train,
 gửi cảnh báo qua AWS SNS và lưu kết quả.
 """
@@ -9,6 +9,12 @@ import numpy as np
 import joblib
 import boto3
 from kafka import KafkaConsumer
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
 # Thiết lập UTF-8 cho console Windows
 sys.stdout.reconfigure(encoding='utf-8')
