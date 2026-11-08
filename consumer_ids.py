@@ -1,4 +1,4 @@
-"""
+﻿"""
 Consumer ML-IDS: Lắng nghe Kafka, phân loại traffic bằng mô hình đã train,
 gửi cảnh báo qua AWS SNS và lưu kết quả.
 """
@@ -46,10 +46,9 @@ LABEL_NAMES = {
 #   AWS_DEFAULT_REGION    = us-east-1  (hoặc region bạn kia dùng)
 # Không cần hardcode key vào code — boto3 tự đọc biến môi trường.
 
-# TODO: Thay ARN bằng ARN thực tế của Topic SNS bạn đã tạo trên AWS Console
 SNS_TOPIC_ARN = os.environ.get(
     'SNS_TOPIC_ARN',
-    'arn:aws:sns:us-east-1:123456789012:NIDS-Security-Alerts'
+    'arn:aws:sns:us-east-1:400131408828:NIDS-Alerts'
 )
 try:
     sns_client = boto3.client('sns', region_name=os.environ.get('AWS_DEFAULT_REGION', 'us-east-1'))
