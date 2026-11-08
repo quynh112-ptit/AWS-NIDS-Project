@@ -11,10 +11,20 @@ echo "   NIDS System Startup Script"
 echo "============================================================"
 
 # ── 1. Lấy IP Public hiện tại của EC2 ───────────────────────
-EC2_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
+TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" 2>/dev/null || true)
+if [ -n "$TOKEN" ]; then
+    EC2_IP=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || true)
+fi
+if [ -z "$EC2_IP" ]; then
+    EC2_IP=$(curl -s https://checkip.amazonaws.com 2>/dev/null || curl -s https://ifconfig.me 2>/dev/null || echo "127.0.0.1")
+    EC2_IP=$(echo "$EC2_IP" | tr -d '[:space:]')
+fi
 echo "[*] IP Public EC2 hiện tại: $EC2_IP"
 
-# ── 2. Pull code + model mới nhất từ GitHub ─────────────────
+# ── 2. Giải phóng cổng 5432 nếu có PostgreSQL chạy ngầm ────
+sudo systemctl stop postgresql 2>/dev/null || true
+
+# ── 3. Pull code + model mới nhất từ GitHub ─────────────────
 echo "[*] Đang pull code mới nhất từ GitHub..."
 git pull origin main
 echo "[✓] Pull xong."
