@@ -68,6 +68,15 @@ show_banner() {
 run_scenario_4_splitscreen() {
     echo -e "\n${GREEN}[*] Đang khởi tạo Kịch bản 4: 'Dòng chảy Hệ sinh thái' (Split Screen 4 Màn hình)...${NC}"
 
+    # Đảm bảo cụm Docker (Kafka, Zookeeper, PostgreSQL) đang chạy ổn định
+    if ! docker ps | grep -q "aws-nids-project-kafka-1.*Up"; then
+        echo -e "${YELLOW}[*] Kafka chưa sẵn sàng. Đang khởi động lại Docker compose...${NC}"
+        docker compose down 2>/dev/null || true
+        docker compose up -d
+        echo -e "${YELLOW}[*] Đợi 10 giây để Kafka và Zookeeper đồng bộ...${NC}"
+        sleep 10
+    fi
+
     # Kiểm tra và cài đặt tmux nếu chưa có
     if ! command -v tmux >/dev/null 2>&1; then
         echo -e "${YELLOW}[!] Tmux chưa được cài đặt. Đang tự động cài đặt tmux...${NC}"
@@ -104,13 +113,13 @@ run_scenario_4_splitscreen() {
 
     # ── CẤU HÌNH LỆNH CHO TỪNG PANE ──────────────────────────────────────────
     # Pane 0 (Top-Left): Data Producer
-    tmux send-keys -t "$SESSION:0.0" "clear; echo -e '\033[1;36m=== [1/4] DATA PRODUCER (LƯU LƯỢNG MẠNG NETFLOW) ===\033[0m'; sleep 2; cd $ROOT_DIR && $PY -u tv3/producer.py || $PY -u producer.py" C-m
+    tmux send-keys -t "$SESSION:0.0" "clear; echo -e '\033[1;36m=== [1/4] DATA PRODUCER (LƯU LƯỢNG MẠNG NETFLOW) ===\033[0m'; sleep 5; cd $ROOT_DIR && $PY -u tv3/producer.py || $PY -u producer.py" C-m
 
     # Pane 1 (Top-Right): Kafka Message Broker Logs
     tmux send-keys -t "$SESSION:0.1" "clear; echo -e '\033[1;33m=== [2/4] APACHE KAFKA (TRÁI TIM TRUNG CHUYỂN DỮ LIỆU) ===\033[0m'; docker logs -f --tail 40 aws-nids-project-kafka-1 2>/dev/null || docker logs -f --tail 40 \$(docker ps -q -f name=kafka | head -n1)" C-m
 
     # Pane 2 (Bottom-Left): AI Consumer & PostgreSQL
-    tmux send-keys -t "$SESSION:0.2" "clear; echo -e '\033[1;32m=== [3/4] AI ML CONSUMER (PHÂN TÍCH & GHI POSTGRESQL) ===\033[0m'; sleep 3; cd $ROOT_DIR && $PY -u tv3/consumer_tv3.py || $PY -u consumer_ids.py" C-m
+    tmux send-keys -t "$SESSION:0.2" "clear; echo -e '\033[1;32m=== [3/4] AI ML CONSUMER (PHÂN TÍCH & GHI POSTGRESQL) ===\033[0m'; sleep 4; cd $ROOT_DIR && $PY -u tv3/consumer_tv3.py || $PY -u consumer_ids.py" C-m
 
     # Pane 3 (Bottom-Right): Web Dashboard SOC / SNS Monitor
     tmux send-keys -t "$SESSION:0.3" "clear; echo -e '\033[1;35m=== [4/4] STREAMLIT DASHBOARD SOC & AWS SNS ALERT ===\033[0m'; cd $ROOT_DIR && $ST run tv3/dashboard.py --server.port 8501 --server.address 0.0.0.0 2>/dev/null || $ST run dashboard.py --server.port 8501 --server.address 0.0.0.0" C-m
