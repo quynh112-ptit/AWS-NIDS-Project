@@ -93,6 +93,13 @@ run_scenario_4_splitscreen() {
     # Tên phiên tmux
     SESSION="nids-matrix"
 
+    echo ""
+    echo -e "  ${BOLD}BẠN MUỐN CHẠY KỊCH BẢN 4 THEO CÁCH NÀO?${NC}"
+    echo -e "  ${CYAN}[1] Mở xem trực tiếp 4 màn hình${NC} (Phô diễn Matrix, bấm ${YELLOW}Ctrl+Q${NC} hoặc ${YELLOW}F12${NC} để thoát về menu)"
+    echo -e "  ${GREEN}[2] Chạy ngầm toàn bộ trong nền${NC} (Không chiếm terminal, in link Web Dashboard)"
+    read -p "  👉 Lựa chọn [1-2] (Mặc định: 1): " mode_choice
+    mode_choice="${mode_choice:-1}"
+
     # Nếu session đã chạy thì đóng lại
     tmux kill-session -t "$SESSION" 2>/dev/null || true
 
@@ -124,19 +131,41 @@ run_scenario_4_splitscreen() {
     # Pane 3 (Bottom-Right): Web Dashboard SOC / SNS Monitor
     tmux send-keys -t "$SESSION:0.3" "clear; echo -e '\033[1;35m=== [4/4] STREAMLIT DASHBOARD SOC & AWS SNS ALERT ===\033[0m'; cd $ROOT_DIR && $ST run tv3/dashboard.py --server.port 8501 --server.address 0.0.0.0 2>/dev/null || $ST run dashboard.py --server.port 8501 --server.address 0.0.0.0" C-m
 
+    # ── THIẾT LẬP PHÍM TẮT THOÁT SIÊU DỄ (KHÔNG CẦN BẤM CTRL+B) ───────────────
+    # Bấm Ctrl+Q hoặc F12 trực tiếp để thoát xem (4 màn hình vẫn chạy ngầm)
+    tmux bind-key -n C-q detach-client
+    tmux bind-key -n F12 detach-client
+    # Bấm Ctrl+X trực tiếp để tắt hẳn 4 màn hình
+    tmux bind-key -n C-x kill-session
+
     # Thiết lập giao diện màu viền hacker cho tmux
     tmux set -t "$SESSION" pane-border-style "fg=#005533"
     tmux set -t "$SESSION" pane-active-border-style "fg=#00ff90"
     tmux set -t "$SESSION" status-style "bg=#050810,fg=#00ff90"
-    tmux set -t "$SESSION" status-left "#[bold] 🛡️ AWS NIDS LIVE SOC #[default]| "
-    tmux set -t "$SESSION" status-right "#[bold]Phím thoát xem: Ctrl+B rồi bấm D #[default]"
+    tmux set -t "$SESSION" status-left "#[bold] 🛡️ AWS NIDS SOC #[default]| "
+    tmux set -t "$SESSION" status-right "#[fg=yellow,bold]Thoát xem: Ctrl+Q hoặc F12 | Tắt hẳn: Ctrl+X #[default]"
 
-    echo -e "${GREEN}${BOLD}[✓] ĐÃ KHỞI TẠO XONG 4 MÀN HÌNH THE MATRIX!${NC}"
-    echo -e "    → Đang chuyển bạn vào màn hình giám sát trực tiếp..."
-    echo -e "    → ${YELLOW}Mẹo khi thuyết trình:${NC} Để thoát khỏi tmux mà các tiến trình vẫn chạy ngầm, bấm: ${BOLD}Ctrl + B${NC}, sau đó thả ra và bấm phím ${BOLD}D${NC} (Detach)."
-    echo ""
-    sleep 2
-    tmux attach-session -t "$SESSION"
+    if [ "$mode_choice" = "2" ]; then
+        echo ""
+        echo -e "${GREEN}${BOLD}[✓] ĐÃ KHỞI CHẠY THÀNH CÔNG 4 DỊCH VỤ NGẦM TRONG NỀN!${NC}"
+        echo -e "    • ${CYAN}Data Producer   :${NC} Đang bơm traffic vào Kafka topic 'network-traffic'"
+        echo -e "    • ${YELLOW}Apache Kafka    :${NC} Đang trung chuyển dữ liệu"
+        echo -e "    • ${GREEN}AI ML Consumer  :${NC} Đang phân loại và ghi vào PostgreSQL 'nids_events'"
+        echo -e "    • ${MAGENTA}Web Dashboard   :${NC} http://${SERVER_IP:-localhost}:8501"
+        echo ""
+        echo -e "    ${YELLOW}Mẹo:${NC} Muốn mở xem trực tiếp 4 màn hình bất cứ lúc nào, gõ: ${BOLD}tmux attach -t $SESSION${NC}"
+        echo ""
+        read -p "Bấm [Enter] để quay lại Menu..."
+    else
+        echo -e "${GREEN}${BOLD}[✓] ĐÃ KHỞI TẠO XONG 4 MÀN HÌNH THE MATRIX!${NC}"
+        echo -e "    → Đang chuyển bạn vào màn hình giám sát trực tiếp..."
+        echo -e "    → ${YELLOW}${BOLD}CÁCH THOÁT CỰC KỲ ĐƠN GIẢN:${NC}"
+        echo -e "       • Bấm ${BOLD}Ctrl + Q${NC} (hoặc phím ${BOLD}F12${NC}) để THOÁT VỀ MENU (4 màn hình vẫn chạy ngầm)."
+        echo -e "       • Bấm ${BOLD}Ctrl + X${NC} để TẮT HẲN toàn bộ 4 màn hình."
+        echo ""
+        sleep 2
+        tmux attach-session -t "$SESSION"
+    fi
 }
 
 # ── KỊCH BẢN 1: MULTI-VECTOR ATTACK ("KHÓI MÙ VÀ DAO GĂM") ───────────────────
