@@ -1,7 +1,9 @@
-"""Phân loại theo mô hình TV2 và lưu kết quả để dashboard truy vấn."""
+"""Phân loại theo mô hình TV2, lưu kết quả PostgreSQL và tự động bắn cảnh báo AWS SNS khi có tấn công."""
 import json
 import math
 import os
+import time
+from datetime import datetime
 
 import joblib
 import pandas as pd
@@ -17,6 +19,40 @@ VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
 ON CONFLICT (topic, partition_id, message_offset) DO NOTHING
 RETURNING prediction
 """
+
+ALERT_COOLDOWN_SECONDS = 30
+last_alert_time = {}
+
+def trigger_sns_alert(sns_client, topic_arn, label, src_ip, dst_port, protocol):
+    """Tự động bắn email cảnh báo qua AWS SNS khi phát hiện tấn công."""
+    if not sns_client or not topic_arn:
+        return
+    now = time.time()
+    if (now - last_alert_time.get(label, 0)) < ALERT_COOLDOWN_SECONDS:
+        return  # Đang trong thời gian cooldown, tránh spam mail
+    
+    last_alert_time[label] = now
+    now_str = datetime.now().strftime("%H:%M:%S ngày %d/%m/%Y")
+    alert_msg = (
+        f"🚨 [CẢNH BÁO NIDS - HỆ THỐNG PHÁT HIỆN TẤN CÔNG]\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"• Loại tấn công : {label}\n"
+        f"• IP Kẻ tấn công: {src_ip}\n"
+        f"• Cổng mục tiêu : {dst_port}\n"
+        f"• Giao thức     : {protocol}\n"
+        f"• Thời gian     : {now_str}\n"
+        f"• Hành động     : Mô hình AI phát hiện tức thì và kích hoạt cảnh báo!\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    )
+    try:
+        res = sns_client.publish(
+            TopicArn=topic_arn,
+            Subject=f"[AWS NIDS ALERT] Phát hiện {label} từ IP {src_ip}",
+            Message=alert_msg
+        )
+        print(f"\n⚡ [AWS SNS AUTO-ALERT] Đã tự động bắn email cảnh báo tới Quản trị viên! (MsgId: {res.get('MessageId')})\n", flush=True)
+    except Exception as exc:
+        print(f"Gửi SNS thất bại ({type(exc).__name__}: {exc}).", flush=True)
 
 
 def classify(messages, model, scaler):
@@ -52,8 +88,12 @@ def main():
     arn = os.getenv("SNS_TOPIC_ARN")
     sns = None
     if arn:
-        import boto3
-        sns = boto3.client("sns", region_name=os.getenv("AWS_DEFAULT_REGION", "us-east-1"))
+        try:
+            import boto3
+            sns = boto3.client("sns", region_name=os.getenv("AWS_DEFAULT_REGION", "us-east-1"))
+        except Exception as e:
+            print(f"[!] Không thể khởi tạo AWS SNS client: {e}")
+
     with psycopg.connect(database_dsn(), connect_timeout=5) as db:
         db.execute((ROOT / "schema.sql").read_text(encoding="utf-8-sig"))
         db.commit()
@@ -79,13 +119,13 @@ def main():
                             new_rows.append(row)
                 consumer.commit()
                 for row in new_rows:
-                    print(f"{LABELS[row[6]]} | {row[3]}:{row[4]} | demo={row[8] or '-'}", flush=True)
-                    if sns and row[6] and row[8] is None:
-                        try:
-                            sns.publish(TopicArn=arn, Subject="[NIDS ALERT]",
-                                        Message=f"{LABELS[row[6]]} | {row[3]}:{row[4]}")
-                        except Exception as exc:
-                            print(f"Gửi SNS thất bại ({type(exc).__name__}).", flush=True)
+                    pred_idx = row[6]
+                    label_name = LABELS.get(pred_idx, f"Threat #{pred_idx}")
+                    print(f"{label_name} | {row[3]}:{row[4]} | demo={row[8] or '-'}", flush=True)
+                    
+                    # TỰ ĐỘNG BẮN CẢNH BÁO AWS SNS KHI PHÁT HIỆN TẤN CÔNG (pred_idx != 0)
+                    if sns and pred_idx != 0:
+                        trigger_sns_alert(sns, arn, label_name, row[3], row[4], row[5])
         except KeyboardInterrupt:
             print("Đã dừng Consumer TV3.", flush=True)
         finally:

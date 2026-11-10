@@ -1,10 +1,12 @@
 """
 Consumer ML-IDS: Lắng nghe Kafka, phân loại traffic bằng mô hình đã train,
-gửi cảnh báo qua AWS SNS và lưu kết quả.
+tự động gửi cảnh báo qua AWS SNS khi phát hiện tấn công mạng và lưu kết quả.
 """
 import json
 import sys
 import os
+import time
+from datetime import datetime
 import numpy as np
 import joblib
 import boto3
@@ -44,14 +46,8 @@ LABEL_NAMES = {
 }
 
 # ─────────────────────────────────────────────
-# 2. Cấu hình AWS SNS
+# 2. Cấu hình AWS SNS (Cảnh báo thời gian thực)
 # ─────────────────────────────────────────────
-# Credentials đọc tự động từ biến môi trường:
-#   AWS_ACCESS_KEY_ID     = AKIA... (do bạn phụ trách nhiệm vụ 1 cấp)
-#   AWS_SECRET_ACCESS_KEY = ...
-#   AWS_DEFAULT_REGION    = us-east-1  (hoặc region bạn kia dùng)
-# Không cần hardcode key vào code — boto3 tự đọc biến môi trường.
-
 SNS_TOPIC_ARN = os.environ.get(
     'SNS_TOPIC_ARN',
     'arn:aws:sns:us-east-1:400131408828:NIDS-Alerts'
@@ -62,11 +58,52 @@ except Exception as e:
     print(f"[!] Không khởi tạo được SNS client: {e}")
     sns_client = None
 
+# Quản lý thời gian gửi cảnh báo tự động (Cooldown chống spam)
+ALERT_COOLDOWN_SECONDS = 30  # Mỗi loại tấn công chỉ gửi 1 email cảnh báo mỗi 30 giây
+last_alert_time = {}
+
+def send_sns_alert(src_ip: str, dst_port: int, protocol, label: str):
+    """
+    TỰ ĐỘNG BẮN EMAIL / CẢNH BÁO QUA AWS SNS KHI PHÁT HIỆN TẤN CÔNG
+    Áp dụng Cooldown thông minh để không spam hàng ngàn mail khi bị DDoS.
+    """
+    if sns_client is None:
+        return
+
+    now = time.time()
+    # Kiểm tra thời gian gửi gần nhất của loại tấn công này
+    last_sent = last_alert_time.get(label, 0)
+    if (now - last_sent) < ALERT_COOLDOWN_SECONDS:
+        return  # Đang trong thời gian cooldown, bỏ qua gửi lặp lại
+
+    last_alert_time[label] = now
+    now_str = datetime.now().strftime("%H:%M:%S ngày %d/%m/%Y")
+
+    alert_msg = (
+        f"🚨 [CẢNH BÁO NIDS - HỆ THỐNG PHÁT HIỆN XÂM NHẬP MẠNG]\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"• Loại tấn công : {label}\n"
+        f"• IP Kẻ tấn công: {src_ip}\n"
+        f"• Cổng mục tiêu : {dst_port}\n"
+        f"• Giao thức     : {protocol}\n"
+        f"• Thời gian     : {now_str}\n"
+        f"• Hành động     : Mô hình AI phát hiện tức thì và kích hoạt cảnh báo!\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    )
+    try:
+        response = sns_client.publish(
+            TopicArn=SNS_TOPIC_ARN,
+            Message=alert_msg,
+            Subject=f'[AWS NIDS ALERT] Phát hiện {label} từ IP {src_ip}'
+        )
+        msg_id = response.get('MessageId', 'OK')
+        print(f"\n\033[93m⚡ [AWS SNS AUTO-ALERT] Đã tự động bắn email cảnh báo! (MessageId: {msg_id})\033[0m\n")
+    except Exception as e:
+        print(f"    [SNS] Lỗi khi gửi cảnh báo tự động (Bỏ qua): {e}")
+
 # ─────────────────────────────────────────────
 # 3. Kết nối Kafka Consumer
 # ─────────────────────────────────────────────
-# Local test : không cần set → dùng localhost:9092
-# Deploy EC2  : export KAFKA_BOOTSTRAP_SERVERS=<IP_EC2>:9092
 KAFKA_SERVERS = os.environ.get('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092').split(',')
 
 consumer = KafkaConsumer(
@@ -87,27 +124,6 @@ print(f"    Features mô hình sử dụng: {FEATURE_COLS}\n")
 BATCH_SIZE = 50  # Gom 50 gói tin rồi predict 1 lần → tăng throughput
 batch_data  = []
 batch_meta  = []
-
-def send_sns_alert(src_ip: str, dst_port: int, protocol, label: str):
-    """Gửi cảnh báo tấn công qua AWS SNS."""
-    if sns_client is None:
-        return
-    alert_msg = (
-        f"[NIDS ALERT] Phát hiện tấn công!\n"
-        f"Loại tấn công : {label}\n"
-        f"IP nguồn      : {src_ip}\n"
-        f"Cổng đích     : {dst_port}\n"
-        f"Giao thức     : {protocol}"
-    )
-    try:
-        response = sns_client.publish(
-            TopicArn=SNS_TOPIC_ARN,
-            Message=alert_msg,
-            Subject='[NIDS ALERT] Phát hiện bất thường mạng'
-        )
-        print(f"    [SNS] Đã gửi cảnh báo (MessageId: {response['MessageId']})")
-    except Exception as e:
-        print(f"    [SNS] Lỗi khi gửi cảnh báo (Bỏ qua): {e}")
 
 try:
     for message in consumer:
@@ -139,6 +155,7 @@ try:
                     print(f"\033[92m[Bình thường] {src_ip} → port {dst_port} | {label}\033[0m")
                 else:
                     print(f"\033[91m[TẤN CÔNG]    {src_ip} → port {dst_port} | {label}\033[0m")
+                    # TỰ ĐỘNG BẮN CẢNH BÁO AWS SNS KHI CÓ TẤN CÔNG
                     send_sns_alert(src_ip, dst_port, protocol, label)
 
             # Reset batch

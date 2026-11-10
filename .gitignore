@@ -1,4 +1,22 @@
 __pycache__/
+*.pyc
 *.zip
 .DS_Store
+
+# Virtual environments
 .venv/
+myenv/
+venv/
+env/
+
+# ⚠️ BẢO MẬT - TUYỆT ĐỐI không commit lên GitHub
+.env
+.env.*
+*.pem
+*.key
+*accessKey*.csv
+*access_key*.csv
+*credentials*
+
+# File runtime auto-generated
+shared_attacks.json
