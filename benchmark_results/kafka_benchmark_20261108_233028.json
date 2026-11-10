@@ -1,0 +1,33 @@
+{
+    "timestamp": "2026-11-08T23:30:28.927050",
+    "run_id": "7229be78-1ddd-4f23-8bd2-fb3cb2291f99",
+    "scenario": "mixed",
+    "topic": "network-traffic",
+    "target_eps": 0,
+    "messages_submitted": 10000,
+    "broker_acknowledged": 10000,
+    "consumed": 10000,
+    "unacknowledged_at_flush": 0,
+    "unreceived_at_timeout": 0,
+    "send_errors": 0,
+    "observer_errors": 0,
+    "send_eps": 7113.420791422765,
+    "ack_eps": 1297.0883440775322,
+    "consume_eps": 1284.697544877594,
+    "ack_latency_ms": {
+        "avg": 3732.2169436199993,
+        "p50": 3655.35,
+        "p95": 6089.927989999999,
+        "p99": 6313.941491,
+        "min": 858.8477,
+        "max": 6321.7769
+    },
+    "end_to_end_latency_ms": {
+        "avg": 3864.1435100599997,
+        "p50": 3783.71695,
+        "p95": 6170.264990000001,
+        "p99": 6394.61131,
+        "min": 893.0498,
+        "max": 6408.9238
+    }
+}
