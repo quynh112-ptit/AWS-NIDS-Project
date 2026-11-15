@@ -16,7 +16,14 @@ INSERT_SQL = """
 INSERT INTO nids_events
 (topic, partition_id, message_offset, src_ip, dst_port, protocol, prediction, scenario, demo_id)
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-ON CONFLICT (topic, partition_id, message_offset) DO NOTHING
+ON CONFLICT (topic, partition_id, message_offset) DO UPDATE SET
+    observed_at = now(),
+    src_ip = EXCLUDED.src_ip,
+    dst_port = EXCLUDED.dst_port,
+    protocol = EXCLUDED.protocol,
+    prediction = EXCLUDED.prediction,
+    scenario = EXCLUDED.scenario,
+    demo_id = EXCLUDED.demo_id
 RETURNING prediction
 """
 
