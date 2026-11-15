@@ -5,7 +5,6 @@
 #   Kịch bản 1: 🟢 Lưu lượng Mạng Bình thường (Normal Traffic)
 #   Kịch bản 2: 🔴 Bão DDoS Cực Đại (DDoS Attack - Tự động bắn Email SNS)
 #   Kịch bản 3: ⚔️ "Khói mù và Dao găm" (Multi-Vector Attack - Tự động bắn Email SNS)
-#   Kịch bản 4: 🚀 'Dòng chảy Hệ sinh thái' (Split Screen 4 Màn hình - Matrix Showcase)
 # ==============================================================================
 
 set -e
@@ -189,64 +188,12 @@ except Exception as e:
     read -p "Bấm [Enter] để quay lại Menu..."
 }
 
-# ── KỊCH BẢN 4: CHIA 4 MÀN HÌNH SPLIT-SCREEN (THE MATRIX SHOWCASE) ───────────
-run_scenario_splitscreen() {
-    echo -e "\n${GREEN}[*] Đang khởi tạo Kịch bản 4: 'Dòng chảy Hệ sinh thái' (Split Screen 4 Màn hình)...${NC}"
-
-    # Đảm bảo cụm Docker chạy
-    if ! docker ps | grep -q "aws-nids-project-kafka-1.*Up"; then
-        docker compose up -d
-        sleep 5
-    fi
-
-    if ! command -v tmux >/dev/null 2>&1; then
-        echo -e "${YELLOW}[!] Tmux chưa được cài đặt. Đang tự động cài đặt tmux...${NC}"
-        sudo apt-get update -y && sudo apt-get install -y tmux
-    fi
-
-    SESSION="nids-matrix"
-    echo ""
-    echo -e "  ${BOLD}BẠN MUỐN CHẠY KỊCH BẢN 4 THEO CÁCH NÀO?${NC}"
-    echo -e "  ${CYAN}[1] Mở xem trực tiếp 4 màn hình${NC} (Phô diễn Matrix, bấm ${YELLOW}Ctrl+Q${NC} hoặc ${YELLOW}F12${NC} để thoát về menu)"
-    echo -e "  ${GREEN}[2] Chạy ngầm toàn bộ trong nền${NC} (Không chiếm terminal)"
-    read -p "  👉 Lựa chọn [1-2] (Mặc định: 1): " mode_choice
-    mode_choice="${mode_choice:-1}"
-
-    tmux kill-session -t "$SESSION" 2>/dev/null || true
-
-    tmux new-session -d -s "$SESSION" -x 160 -y 48
-    tmux rename-window -t "$SESSION:0" "AWS-NIDS-SOC"
-    tmux split-window -v -t "$SESSION:0"
-    tmux split-window -h -t "$SESSION:0.0"
-    tmux split-window -h -t "$SESSION:0.2"
-
-    tmux send-keys -t "$SESSION:0.0" "clear; echo -e '\033[1;36m=== [1/4] DATA PRODUCER (LƯU LƯỢNG NETFLOW) ===\033[0m'; cd $ROOT_DIR && $PY -u producer.py || $PY -u tv3/producer.py" C-m
-    tmux send-keys -t "$SESSION:0.1" "clear; echo -e '\033[1;33m=== [2/4] APACHE KAFKA (TRÁI TIM ĐỆM DỮ LIỆU) ===\033[0m'; docker logs -f --tail 40 aws-nids-project-kafka-1 2>/dev/null" C-m
-    tmux send-keys -t "$SESSION:0.2" "clear; echo -e '\033[1;32m=== [3/4] AI ML CONSUMER (PHÂN TÍCH & AUTO SNS) ===\033[0m'; cd $ROOT_DIR && $PY -u consumer_ids.py || $PY -u tv3/consumer_tv3.py" C-m
-    tmux send-keys -t "$SESSION:0.3" "clear; echo -e '\033[1;35m=== [4/4] STREAMLIT DASHBOARD SOC ===\033[0m'; cd $ROOT_DIR && $ST run tv3/dashboard.py --server.port 8501 --server.address 0.0.0.0 2>/dev/null || $ST run dashboard.py --server.port 8501 --server.address 0.0.0.0" C-m
-
-    tmux bind-key -n C-q detach-client
-    tmux bind-key -n F12 detach-client
-    tmux bind-key -n C-x kill-session
-
-    if [ "$mode_choice" = "2" ]; then
-        echo -e "\n${GREEN}[✓] Đã khởi chạy 4 dịch vụ ngầm trong nền!${NC}"
-        read -p "Bấm [Enter] để quay lại Menu..."
-    else
-        echo -e "\n${GREEN}[✓] Đang chuyển vào màn hình Matrix. Bấm Ctrl+Q hoặc F12 để thoát xem.${NC}"
-        sleep 2
-        tmux attach-session -t "$SESSION"
-    fi
-}
-
 # ── DỪNG CÁC TIẾN TRÌNH DEMO ──────────────────────────────────────────────────
 stop_all_demo() {
     echo -e "\n${YELLOW}[*] Đang dừng tất cả các tiến trình Demo...${NC}"
-    tmux kill-session -t "nids-matrix" 2>/dev/null || true
     pkill -f "producer.py" 2>/dev/null || true
     pkill -f "consumer_ids.py" 2>/dev/null || true
     pkill -f "consumer_tv3.py" 2>/dev/null || true
-    pkill -f "streamlit" 2>/dev/null || true
     echo -e "${GREEN}[✓] Đã dừng toàn bộ tiến trình Demo an toàn.${NC}"
     sleep 1
 }
@@ -262,19 +209,16 @@ while true; do
     echo ""
     echo -e "  ${MAGENTA}[3] ⚔️ KỊCH BẢN 3: 'Khói mù và Dao găm' (Multi-Vector -> \033[1;33mTỰ ĐỘNG BẮN EMAIL BẮT PORT SCAN\033[0m${MAGENTA})${NC}"
     echo ""
-    echo -e "  ${CYAN}[4] 🚀 KỊCH BẢN 4: 'Dòng chảy Hệ sinh thái' (Split Screen 4 Màn hình - Matrix)${NC}"
-    echo ""
-    echo -e "  ${BLUE}[5] 🛑 Dừng toàn bộ tiến trình Demo${NC}"
+    echo -e "  ${BLUE}[4] 🛑 Dừng toàn bộ tiến trình Demo${NC}"
     echo -e "  ${NC}[0] Thoát ra Terminal"
     echo ""
-    read -p "  👉 Chọn kịch bản bạn muốn kích hoạt [0-5]: " choice
+    read -p "  👉 Chọn kịch bản bạn muốn kích hoạt [0-4]: " choice
 
     case "$choice" in
         1) run_scenario_normal ;;
         2) run_scenario_ddos ;;
         3) run_scenario_multivector ;;
-        4) run_scenario_splitscreen ;;
-        5) stop_all_demo ;;
+        4) stop_all_demo ;;
         0) echo -e "\n${GREEN}[✓] Tạm biệt! Chúc nhóm bảo vệ thành công!${NC}\n"; exit 0 ;;
         *) echo -e "\n${RED}[!] Lựa chọn không hợp lệ. Vui lòng thử lại.${NC}"; sleep 1 ;;
     esac
