@@ -14,6 +14,17 @@ from tv3_ui import apply_theme, heading, hero, kpi
 
 LOCAL_TZ = ZoneInfo("Asia/Ho_Chi_Minh")
 ALERT_COLORS = ["#ff7890", "#ffc477", "#9baaff"]
+SCENARIO_CODES = {"normal": 0, "ddos": 1, "port_scan": 2, "brute_force": 3}
+EVENT_FILTERS = {
+    "Cảnh báo demo (lọc Brute Force)": "prediction <> 0 AND (prediction <> 3 OR scenario = 'brute_force')",
+    "Mọi cảnh báo": "prediction <> 0",
+    "Brute Force · Khớp mô phỏng": "prediction = 3 AND scenario = 'brute_force'",
+    "Brute Force · Cảnh báo nhầm": "prediction = 3 AND scenario = 'normal'",
+    "Brute Force · Sai kịch bản": "prediction = 3 AND scenario IN ('ddos', 'port_scan')",
+    "Brute Force · Chưa xác minh": "prediction = 3 AND (scenario IS NULL OR scenario NOT IN ('normal', 'ddos', 'port_scan', 'brute_force'))",
+    "Kịch bản bình thường": "scenario = 'normal'",
+    "Tất cả sự kiện": "TRUE",
+}
 
 st.set_page_config(page_title="NIDS SOC", page_icon="🛡️", layout="wide")
 apply_theme()
@@ -23,6 +34,7 @@ with st.sidebar:
     st.html('<div class="nids-brand"><span class="nids-mark" aria-hidden="true">◆</span> NIDS / SOC</div>')
     minutes = st.selectbox("Khoảng thời gian", (5, 15, 60), index=1,
                            format_func=lambda value: f"{value} phút gần nhất")
+    event_filter = st.selectbox("Lọc bảng sự kiện", list(EVENT_FILTERS))
     qr_url = os.getenv("NIDS_QR_URL")
     if qr_url:
         st.divider()
@@ -33,7 +45,7 @@ with st.sidebar:
         st.link_button("Mở Web QR ↗", qr_url, width="stretch")
 
 
-def read_snapshot(window):
+def read_snapshot(window, event_filter):
     args = (window,)
     time_filter = "observed_at >= now() - make_interval(mins => %s)"
     with psycopg.connect(database_dsn(read_only=True), connect_timeout=3,
@@ -47,12 +59,14 @@ def read_snapshot(window):
                    count(*) FILTER (WHERE prediction <> 0)
             FROM nids_events WHERE {time_filter} GROUP BY 1 ORDER BY 1
         """, args).fetchall()
-        alerts = db.execute(f"""
+        # SQL conditions come from the fixed filter options above.
+        event_condition = EVENT_FILTERS[event_filter]
+        events = db.execute(f"""
             SELECT observed_at, src_ip, dst_port, protocol, prediction, scenario, demo_id
-            FROM nids_events WHERE {time_filter} AND prediction <> 0
+            FROM nids_events WHERE {time_filter} AND ({event_condition})
             ORDER BY observed_at DESC LIMIT 100
         """, args).fetchall()
-    return dict(counts), timeline, alerts
+    return dict(counts), timeline, events
 
 
 def finish_chart(chart):
@@ -95,7 +109,7 @@ def distribution_chart(counts):
 @st.fragment(run_every="3s")
 def render_live():
     try:
-        counts, timeline, alerts = read_snapshot(minutes)
+        counts, timeline, events = read_snapshot(minutes, event_filter)
     except psycopg.errors.UndefinedTable:
         st.info("Chưa có bảng sự kiện.")
         return
@@ -110,7 +124,7 @@ def render_live():
     cols = st.columns(4)
     for col, (label, value, color) in zip(cols, (
         ("Đã phân loại", f"{total:,}", "#53e6c0"),
-        ("Bình thường", f"{counts.get(0, 0):,}", "#79a8ff"),
+        ("Dự đoán bình thường", f"{counts.get(0, 0):,}", "#79a8ff"),
         ("Cảnh báo", f"{attack_count:,}", "#ff7890"),
         ("Tỷ lệ cảnh báo", f"{(100 * attack_count / total if total else 0):.1f}%", "#ffc477"),
     )):
@@ -129,16 +143,27 @@ def render_live():
         st.altair_chart(distribution_chart(counts), width="stretch", theme=None)
 
     with st.container(key="soc-panel-alerts"):
-        heading("Cảnh báo gần nhất")
-        if not alerts:
-            st.info("Chưa có cảnh báo.")
+        heading("Sự kiện gần nhất")
+        st.caption(event_filter)
+        if not events:
+            st.info("Chưa có sự kiện phù hợp với bộ lọc.")
             return
-        data = pd.DataFrame(alerts, columns=["Thời điểm", "IP nguồn", "Cổng", "Giao thức",
-                                            "Loại cảnh báo", "Kịch bản", "Mã sự kiện"])
+        data = pd.DataFrame(events, columns=["Thời điểm", "IP nguồn", "Cổng", "Giao thức",
+                                            "Mô hình dự đoán", "Kịch bản đầu vào", "Mã sự kiện"])
         data["Thời điểm"] = pd.to_datetime(data["Thời điểm"], utc=True).dt.tz_convert(LOCAL_TZ)
-        data["Loại cảnh báo"] = data["Loại cảnh báo"].map(LABELS)
+        expected = data["Kịch bản đầu vào"].map(SCENARIO_CODES)
+        data["Đối chiếu"] = "Chưa xác minh"
+        known = expected.notna()
+        matches = expected.eq(data["Mô hình dự đoán"])
+        data.loc[known & matches, "Đối chiếu"] = "Khớp kịch bản"
+        data.loc[known & ~matches, "Đối chiếu"] = "Sai kịch bản"
+        false_alarm = expected.eq(0) & data["Mô hình dự đoán"].ne(0)
+        data.loc[false_alarm, "Đối chiếu"] = "Cảnh báo nhầm"
+        data["Kịch bản đầu vào"] = expected.map(LABELS).fillna("Không rõ")
+        data["Mô hình dự đoán"] = data["Mô hình dự đoán"].map(LABELS)
         data["Giao thức"] = data["Giao thức"].map(lambda value: {6: "TCP", 17: "UDP"}.get(value, str(value)))
-        data = data[["Thời điểm", "Loại cảnh báo", "IP nguồn", "Cổng", "Giao thức", "Mã sự kiện"]]
+        data = data[["Thời điểm", "Kịch bản đầu vào", "Mô hình dự đoán", "Đối chiếu",
+                     "IP nguồn", "Cổng", "Giao thức", "Mã sự kiện"]]
         st.dataframe(data, hide_index=True, width="stretch",
                      column_config={"Thời điểm": st.column_config.DatetimeColumn(format="DD/MM HH:mm:ss")})
 
