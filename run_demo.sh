@@ -59,7 +59,7 @@ show_banner() {
     echo -e "  ${YELLOW}Kafka Broker  :${NC} $KAFKA_SERVER"
     echo -e "  ${YELLOW}PostgreSQL    :${NC} $NIDS_DSN"
     echo -e "  ${YELLOW}SNS Alert ARN :${NC} $SNS_TOPIC_ARN"
-    echo -e "  ${GREEN}Web Dashboard :${NC} Đang mở sẵn trên Trình duyệt để Hội đồng xem trực tiếp"
+    echo -e "  ${GREEN}Web Dashboard :${NC} Đang mở trên http://localhost:8501"
     echo "  ───────────────────────────────────────────────────────────────"
 }
 
@@ -192,7 +192,7 @@ stop_all_demo() {
 # ── VÒNG LẶP MENU ĐIỀU KHIỂN CHÍNH ───────────────────────────────────────────
 while true; do
     show_banner
-    echo -e "  ${BOLD}DANH SÁCH CÁC KỊCH BẢN TRÌNH DIỄN (WOW-FACTOR):${NC}"
+    echo -e "  ${BOLD}DANH SÁCH CÁC KỊCH BẢN TRÌNH DIỄN:${NC}"
     echo ""
     echo -e "  ${GREEN}[1] KỊCH BẢN 1: Mạng bình thường (Normal Traffic)${NC}"
     echo ""
