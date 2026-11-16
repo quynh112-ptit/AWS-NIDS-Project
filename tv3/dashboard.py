@@ -15,15 +15,16 @@ from tv3_ui import apply_theme, heading, hero, kpi
 LOCAL_TZ = ZoneInfo("Asia/Ho_Chi_Minh")
 ALERT_COLORS = ["#ff7890", "#ffc477", "#9baaff"]
 SCENARIO_CODES = {"normal": 0, "ddos": 1, "port_scan": 2, "brute_force": 3}
+MATCHED_ATTACK = (
+    "(prediction = 1 AND scenario = 'ddos') OR "
+    "(prediction = 2 AND scenario = 'port_scan') OR "
+    "(prediction = 3 AND scenario = 'brute_force')"
+)
 EVENT_FILTERS = {
-    "Cảnh báo demo (lọc Brute Force)": "prediction <> 0 AND (prediction <> 3 OR scenario = 'brute_force')",
-    "Mọi cảnh báo": "prediction <> 0",
-    "Brute Force · Khớp mô phỏng": "prediction = 3 AND scenario = 'brute_force'",
-    "Brute Force · Cảnh báo nhầm": "prediction = 3 AND scenario = 'normal'",
-    "Brute Force · Sai kịch bản": "prediction = 3 AND scenario IN ('ddos', 'port_scan')",
-    "Brute Force · Chưa xác minh": "prediction = 3 AND (scenario IS NULL OR scenario NOT IN ('normal', 'ddos', 'port_scan', 'brute_force'))",
-    "Kịch bản bình thường": "scenario = 'normal'",
-    "Tất cả sự kiện": "TRUE",
+    "Brute Force đầu tiên": ("prediction = 3 AND scenario = 'brute_force' AND demo_id IS NULL", "ASC", 1),
+    "Cảnh báo khi chạy demo": (f"({MATCHED_ATTACK}) AND demo_id IS NULL", "DESC", 100),
+    "Cảnh báo từ Web QR": (f"({MATCHED_ATTACK}) AND demo_id IS NOT NULL", "DESC", 100),
+    "Mọi cảnh báo": ("prediction <> 0", "DESC", 100),
 }
 
 st.set_page_config(page_title="NIDS SOC", page_icon="🛡️", layout="wide")
@@ -34,7 +35,7 @@ with st.sidebar:
     st.html('<div class="nids-brand"><span class="nids-mark" aria-hidden="true">◆</span> NIDS / SOC</div>')
     minutes = st.selectbox("Khoảng thời gian", (5, 15, 60), index=1,
                            format_func=lambda value: f"{value} phút gần nhất")
-    event_filter = st.selectbox("Lọc bảng sự kiện", list(EVENT_FILTERS))
+    event_filter = st.selectbox("Lọc bảng sự kiện", list(EVENT_FILTERS), index=1)
     qr_url = os.getenv("NIDS_QR_URL")
     if qr_url:
         st.divider()
@@ -60,12 +61,12 @@ def read_snapshot(window, event_filter):
             FROM nids_events WHERE {time_filter} GROUP BY 1 ORDER BY 1
         """, args).fetchall()
         # SQL conditions come from the fixed filter options above.
-        event_condition = EVENT_FILTERS[event_filter]
+        event_condition, order, limit = EVENT_FILTERS[event_filter]
         events = db.execute(f"""
             SELECT observed_at, src_ip, dst_port, protocol, prediction, scenario, demo_id
             FROM nids_events WHERE {time_filter} AND ({event_condition})
-            ORDER BY observed_at DESC LIMIT 100
-        """, args).fetchall()
+            ORDER BY observed_at {order}, topic, partition_id, message_offset LIMIT %s
+        """, (*args, limit)).fetchall()
     return dict(counts), timeline, events
 
 
