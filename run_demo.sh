@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+﻿#!/usr/bin/env bash
 # ==============================================================================
 # AWS NIDS - MASTER DEMO LAUNCHER (run_demo.sh)
 # Hỗ trợ đầy đủ các Kịch bản Trình diễn (Wow-Factor):
@@ -118,8 +118,6 @@ except Exception as e:
     print(f'[✗] Lỗi kết nối Kafka điều khiển: {e}')
 "
     echo ""
-    echo -e "${GREEN}👉 TRÊN DASHBOARD:${NC} Biểu đồ lưu lượng màu xanh ổn định ở mức ~150 gói/giây."
-    echo -e "${GREEN}👉 TRẠNG THÁI     :${NC} AN TOÀN (Safe). Không có cảnh báo email nào được gửi."
     echo ""
     read -p "Bấm [Enter] để quay lại Menu..."
 }
@@ -147,11 +145,7 @@ except Exception as e:
     print(f'[✗] Lỗi kết nối Kafka điều khiển: {e}')
 "
     echo ""
-    echo -e "${YELLOW}👉 TRÊN DASHBOARD :${NC} Cột lưu lượng giật dựng đứng lên hàng ngàn gói/giây, đổi màu đỏ rực!"
-    echo -e "${CYAN}👉 TRÊN KAFKA     :${NC} Kafka gánh tải hàng ngàn gói/giây mượt mà, hệ thống KHÔNG hề bị sập!"
-    echo -e "${MAGENTA}👉 TỰ ĐỘNG BẮN SNS:${NC} AI Consumer phát hiện DDoS -> \033[1;33mTỰ ĐỘNG BẮN EMAIL CẢNH BÁO VỀ ĐIỆN THOẠI/HÒM THƯ!\033[0m"
     echo ""
-    echo -e "${BOLD}📲 HÃY KIỂM TRA ĐIỆN THOẠI / HÒM THƯ NGAY BÂY GIỜ ĐỂ XEM EMAIL CẢNH BÁO TỰ ĐỘNG!${NC}"
     echo ""
     read -p "Bấm [Enter] để quay lại Menu..."
 }
@@ -180,10 +174,7 @@ except Exception as e:
     print(f'[✗] Lỗi kết nối Kafka điều khiển: {e}')
 "
     echo ""
-    echo -e "${YELLOW}👉 TRÊN DASHBOARD :${NC} Giữa tâm bão DDoS, AI bóc tách chính xác IP 45.33.12.19 đang dò cổng lén lút!"
-    echo -e "${MAGENTA}👉 TỰ ĐỘNG BẮN SNS:${NC} AI Consumer phân loại Port Scan -> \033[1;33mTỰ ĐỘNG BẮN EMAIL BÁO CÁO ĐÍCH DANH IP VỪA DÒ CỔNG!\033[0m"
     echo ""
-    echo -e "${BOLD}📲 HÃY MỞ ĐIỆN THOẠI VÀ ĐỌC TO THÔNG BÁO EMAIL CẢNH BÁO TRƯỚC HỘI ĐỒNG!${NC}"
     echo ""
     read -p "Bấm [Enter] để quay lại Menu..."
 }
@@ -203,13 +194,13 @@ while true; do
     show_banner
     echo -e "  ${BOLD}DANH SÁCH CÁC KỊCH BẢN TRÌNH DIỄN (WOW-FACTOR):${NC}"
     echo ""
-    echo -e "  ${GREEN}[1] 🟢 KỊCH BẢN 1: Mạng Bình thường (Normal Traffic - Êm ả, an toàn)${NC}"
+    echo -e "  ${GREEN}[1] KỊCH BẢN 1: Mạng Bình thường (Normal Traffic - Êm ả, an toàn)${NC}"
     echo ""
-    echo -e "  ${RED}[2] 🔴 KỊCH BẢN 2: Bão DDoS Cực Đại (DDoS Surge -> \033[1;33mTỰ ĐỘNG BẮN EMAIL SNS\033[0m${RED})${NC}"
+    echo -e "  ${RED}[2] KỊCH BẢN 2: Bão DDoS Cực Đại (DDoS Surge -> \033[1;33mTỰ ĐỘNG BẮN EMAIL SNS\033[0m${RED})${NC}"
     echo ""
-    echo -e "  ${MAGENTA}[3] ⚔️ KỊCH BẢN 3: 'Khói mù và Dao găm' (Multi-Vector -> \033[1;33mTỰ ĐỘNG BẮN EMAIL BẮT PORT SCAN\033[0m${MAGENTA})${NC}"
+    echo -e "  ${MAGENTA}[3] KỊCH BẢN 3: 'Khói mù và Dao găm' (Multi-Vector -> \033[1;33mTỰ ĐỘNG BẮN EMAIL BẮT PORT SCAN\033[0m${MAGENTA})${NC}"
     echo ""
-    echo -e "  ${BLUE}[4] 🛑 Dừng toàn bộ tiến trình Demo${NC}"
+    echo -e "  ${BLUE}[4] Dừng toàn bộ tiến trình Demo${NC}"
     echo -e "  ${NC}[0] Thoát ra Terminal"
     echo ""
     read -p "  👉 Chọn kịch bản bạn muốn kích hoạt [0-4]: " choice
