@@ -210,7 +210,7 @@ while true; do
         2) run_scenario_ddos ;;
         3) run_scenario_multivector ;;
         4) stop_all_demo ;;
-        0) echo -e "\n${GREEN}[✓] Tạm biệt! Chúc nhóm bảo vệ thành công!${NC}\n"; exit 0 ;;
+        0) exit 0 ;;
         *) echo -e "\n${RED}[!] Lựa chọn không hợp lệ. Vui lòng thử lại.${NC}"; sleep 1 ;;
     esac
 done
