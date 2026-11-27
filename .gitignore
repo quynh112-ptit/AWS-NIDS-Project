@@ -20,3 +20,6 @@ env/
 
 # File runtime auto-generated
 shared_attacks.json
+scratch_docx_text.txt
+sheet_raw.html
+*.tmp

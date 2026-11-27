@@ -66,7 +66,7 @@ show_banner() {
 # ── ĐẢM BẢO SERVICES ĐANG CHẠY TRÊN HỆ THỐNG ──────────────────────────────────
 ensure_pipeline_running() {
     # 1. Đảm bảo Docker Kafka & Postgres chạy
-    if ! docker ps | grep -q "aws-nids-project-kafka-1.*Up"; then
+    if ! docker ps | grep -q -i "kafka.*Up" || ! docker ps | grep -q -i "postgres.*Up"; then
         echo -e "${YELLOW}[*] Khởi động Docker containers (Kafka, Postgres)...${NC}"
         docker compose up -d
         sleep 5
@@ -91,7 +91,8 @@ ensure_pipeline_running() {
         elif [ -f "tv3/producer.py" ]; then
             nohup $PY -u tv3/producer.py > /tmp/producer.log 2>&1 &
         fi
-        sleep 2
+        echo -e "${YELLOW}[*] Đang chờ Producer kết nối Kafka (6s)...${NC}"
+        sleep 6
     fi
 }
 

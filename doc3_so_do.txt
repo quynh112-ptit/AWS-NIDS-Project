@@ -1,0 +1,38 @@
+﻿1. Nâng cấp Giao diện: Giao diện Hacker "Dark Mode" & Bản đồ Thế giới
+Thay vì chỉ dùng biểu đồ đường khô khan, trên Web Dashboard (Streamlit), nhóm hãy bổ sung 2 tính năng thị giác cực mạnh:
+* Chế độ Dark Theme: Nền đen, chữ xanh neon/đỏ để mang lại cảm giác Cyber Security chuyên nghiệp.
+* Bản đồ Tấn công Thời gian thực (Live Threat Map): Sử dụng thư viện streamlit-folium kết hợp API GeoIP miễn phí. Khi có IP tấn công, bản đồ thế giới sẽ xuất hiện các đốm sáng đỏ nhấp nháy, bắn tia từ vị trí của IP đó về vị trí máy chủ của bạn (giống giao diện của Kaspersky Cybermap). Khi hội đồng nhìn thấy bản đồ này, họ sẽ lập tức bị thuyết phục.
+Kịch bản Demo 1: "Khói mù và Dao găm" (Multi-Vector Attack)
+Mục đích: Khoe sức mạnh chịu tải của Kafka và độ nhạy của thuật toán Machine Learning. Các hệ thống tường lửa cũ thường bị "chết đứng" khi gặp kịch bản này.
+* Hành động:
+   * Bước 1: Chạy mô phỏng luồng traffic bình thường (Web chạy êm ả).
+   * Bước 2: Tung "Khói mù" - Bạn kích hoạt tấn công DDoS cường độ cao. Kafka gánh tải hàng ngàn gói tin/giây, biểu đồ lưu lượng giật lên đỉnh.
+   * Bước 3: Rút "Dao găm" - Ngay giữa tâm bão DDoS, bạn chạy ngầm 1 luồng tấn công dò quét cổng (Port Scan) rất chậm và lén lút từ một IP khác.
+* Điểm nhấn "Wow": Hội đồng sẽ thấy hệ thống KHÔNG bị sập nhờ Kafka làm bộ đệm. Quan trọng hơn, thuật toán AI trên Web Dashboard không chỉ báo động đỏ vụ DDoS, mà còn bóc tách và vạch mặt chính xác cái IP đang lén lút Port Scan ẩn dưới lớp "khói mù" kia.
+Kịch bản Demo 2: Vũ khí Tương tác (Hội đồng tự hack hệ thống)
+Mục đích: Xóa bỏ sự nhàm chán của việc sinh viên tự chạy code tự xem. Biến hội đồng thành người tham gia trực tiếp.
+* Chuẩn bị: Nhóm viết sẵn 1 trang web tĩnh cực kỳ đơn giản (hoặc 1 API form) có nút "Tấn công giả lập" và tạo thành 1 mã QR Code.
+* Hành động trên bục bảo vệ:
+   * Lên slide chứa mã QR Code khổng lồ.
+   * Bạn mời các thầy cô trong hội đồng: "Kính mời các thầy cô rút điện thoại ra, quét mã QR này và bấm nút trên màn hình để đóng vai Hacker tấn công trực tiếp vào máy chủ đám mây của nhóm em."
+* Điểm nhấn "Wow": Ngay khi thầy cô vừa bấm nút trên điện thoại của họ, trên Web Dashboard của nhóm chiếu trên máy chiếu lập tức hiện lên: IP của mạng 4G/Wifi trường mà thầy cô đang dùng, hiển thị cảnh báo đỏ chót cùng vị trí trên bản đồ. Kịch bản "Người thật - Việc thật" này luôn mang lại điểm tuyệt đối vì tính trung thực và khả năng chạy Real-time của AWS.
+Kịch bản Demo 3: Giám sát Không chạm (Wearable Notification)
+Mục đích: Phô diễn tính năng Amazon SNS một cách "Vật lý" và chân thực nhất.
+* Chuẩn bị: Cài đặt số điện thoại nhận SMS từ SNS là số của bạn (hoặc kết nối email/SMS đẩy thông báo ra đồng hồ thông minh Apple Watch/Garmin nếu có). Bật âm lượng tối đa.
+* Hành động: Sau khi hệ thống bị tấn công đỉnh điểm ở kịch bản 1 hoặc 2. Bạn không cần nhìn vào màn hình máy tính. Bất ngờ, điện thoại hoặc đồng hồ trên tay bạn kêu bíp bíp (hoặc rung bần bật).
+* Điểm nhấn "Wow": Bạn giơ điện thoại/đồng hồ lên trước hội đồng và đọc to: "Hệ thống SNS của AWS vừa tự động nhắn tin cảnh báo máy chủ đang bị tấn công bởi IP 192.168.x.x vào lúc 10h15 phút". Điều này chứng minh hệ thống NIDS của bạn là hệ thống Cảnh báo Chủ động (Proactive), kỹ sư không cần trực màn hình 24/7 vẫn nắm được sự cố ngay lập tức.
+💡 Lời khuyên cho nhóm : có  người lo System Integration, hãy phân công người  chuẩn bị cái mã QR Code và kịch bản kết nối điện thoại. Khi chạy demo, một người cầm mic thuyết trình, một người thao tác gõ lệnh thật dứt khoát trên giao diện Terminal đen chữ xanh (Matrix style).
+về kịch bản chạy mã qr:
+Cách chuẩn bị mã QR Code (Cho Kịch bản 2):
+1. Tạo nút bấm tấn công: Bạn cần viết sẵn một trang web tĩnh cực kỳ đơn giản hoặc một API form, trên đó có chứa một nút bấm mang tính năng "Tấn công giả lập". Nút bấm này khi được nhấn sẽ gọi một API nội bộ để nhồi luồng dữ liệu độc hại vào Kafka.
+2. Tạo đường dẫn Public: Vì mã nguồn web thường đang chạy trên máy tính cá nhân (localhost), bạn hãy dùng phần mềm Ngrok để mở (expose) trang web đó ra internet. Ngrok sẽ cung cấp cho bạn một đường dẫn (URL) public để bất kỳ ai có mạng 4G hoặc Wifi đều truy cập được.
+3. Chuyển thành mã QR: Lấy đường dẫn public từ Ngrok, dán vào các trang tạo mã miễn phí trên mạng (như qr-code-generator.com hoặc me-qr.com) để tạo mã QR Code. Tải hình ảnh đó về và chèn với kích thước thật lớn lên slide trình chiếu.
+Cách thiết lập nhận cảnh báo (Cho Kịch bản 3):
+1. Cấu hình AWS SNS: Trên dịch vụ Amazon SNS, bạn thiết lập số điện thoại thật của mình để nhận tin nhắn SMS tự động từ hệ thống. Bạn có thể tận dụng thư viện boto3 trong Python để hệ thống tự động bắn SMS mỗi khi phát hiện IP tấn công.
+2. Đồng bộ thiết bị: Bật âm lượng điện thoại ở mức tối đa. Nếu bạn sử dụng đồng hồ thông minh (như Apple Watch hoặc Garmin), hãy đảm bảo tính năng đẩy thông báo (Push Notification) từ tin nhắn SMS/Email sang đồng hồ đã được kích hoạt.
+3. Thao tác trình diễn: Khi chạy demo và để hệ thống đạt đỉnh điểm tấn công, thiết bị của bạn sẽ kêu bíp bíp hoặc rung lên. Lúc này, bạn chỉ cần giơ điện thoại hoặc đồng hồ lên và đọc to thông báo cảnh báo từ AWS SNS để chứng minh tính năng giám sát chủ động.
+>>>Kịch bản Trình diễn (Wow-Factor)
+Gõ lệnh streamlit run dashboard.py vào Terminal để mở web lên. Trong lúc thuyết trình, bạn hãy làm theo đúng kịch bản này:
+1. Đầu tiên: Chọn nút "🟢 Mạng Bình thường" bên trái. Hội đồng sẽ thấy biểu đồ lưu lượng màu xanh chạy ổn định ở mức 100 gói/giây, bản đồ quả địa cầu màu đen quay êm đềm, trạng thái báo "AN TOÀN".
+2. Chuyển biến: Bạn dõng dạc: "Bây giờ, em xin giả lập hệ thống bị Hacker nhồi traffic DDoS". Bấm nút "🔴 Bão DDoS". Ngay lập tức, biểu đồ lưu lượng dựng đứng lên cột 10.000, toàn bộ màu chuyển sang đỏ rực chữ chớp nháy. Bản đồ quả địa cầu xuất hiện hàng loạt đốm lửa đỏ báo hiệu các vị trí IP đang nã đạn vào hệ thống.
+3. Tinh tế: Bạn tiếp tục: "DDoS thường dùng để đánh lạc hướng tường lửa. Giữa lúc này, Hacker lén lút thả mã độc dò quét cổng". Bấm nút "🟠 Port Scan". Biểu đồ giảm tải, nhưng log hiện ra vạch trần đúng 1 IP duy nhất đang liên tục chọc vào Port 22, 21.

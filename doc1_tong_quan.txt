@@ -1,0 +1,46 @@
+﻿Tổng quan đề tài
+Tên đề tài: Xây dựng hệ thống phát hiện xâm nhập mạng (NIDS) thời gian thực bằng Machine Learning và Apache Kafka trên hạ tầng bảo mật AWS.
+Vấn đề: Các hệ thống mạng hiện đại tạo ra khối lượng log khổng lồ mỗi giây. Việc dùng các quy tắc tĩnh (rule-based) hoặc phân tích offline không còn đáp ứng được yêu cầu phản ứng nhanh trước các cuộc tấn công mới. Bên cạnh đó, việc đưa các hệ thống giám sát lên đám mây đòi hỏi phải thiết lập các lớp bảo mật cực kỳ chặt chẽ để tránh rò rỉ dữ liệu log nhạy cảm.
+Giải pháp đề xuất: Xây dựng một đường ống dữ liệu (data pipeline) thời gian thực sử dụng Apache Kafka làm trung tâm trung chuyển thông điệp, kết hợp với mô hình Machine Learning đóng gói bằng Docker để dự đoán xâm nhập. Toàn bộ kiến trúc được triển khai trên hạ tầng Amazon EC2, áp dụng nguyên lý đặc quyền tối thiểu của AWS IAM và lưu trữ dữ liệu an toàn trên Amazon S3 và PostgreSQL.
+Hướng tiếp cận và Quy trình thực hiện
+Hệ thống được phát triển theo mô hình luồng dữ liệu một chiều (streaming pipeline), bao gồm 4 giai đoạn chính[a]:
+1. Xây dựng hạ tầng Cloud và Bảo mật (Platform Setup): Khởi tạo các phiên bản Amazon EC2. Cấu hình AWS IAM Roles để cấp quyền cho EC2 ghi log lên S3 thay vì sử dụng Access Key tĩnh. Xây dựng S3 Bucket Policies để từ chối mọi truy cập công khai.
+2. Thiết lập Message Broker: Khởi chạy Apache Kafka và Zookeeper bên trong Docker container trên EC2 để tạo môi trường truyền nhận dữ liệu độc lập, dễ dàng mở rộng.
+3. Phát triển Streaming Pipeline & Tích hợp AI (Core Processing):
+   * Producer: Một script Python đọc bộ dữ liệu tấn công mạng (như CICIDS-2017 hoặc NSL-KDD) và liên tục bắn dữ liệu gói tin vào Kafka Topic để giả lập luồng traffic thực tế.
+   * Consumer & ML (Module 04 & 05): Script Python lắng nghe Kafka Topic, thực hiện tiền xử lý dữ liệu (chuẩn hóa, encode) ngay trong bộ nhớ, sau đó đưa qua mô hình Machine Learning để phân loại (Bình thường / Tấn công).
+4. Lưu trữ và Đánh giá (Storage & Benchmarking): Ghi các luồng traffic sạch và log tổng hợp (Cold data) vào Amazon S3. Đẩy ngay các cảnh báo xâm nhập (Hot data) vào cơ sở dữ liệu PostgreSQL để phục vụ trực quan hóa (có thể kết nối qua DBeaver). Tiến hành chạy tải tĩnh để đo lường thông lượng (Throughput - số bản ghi/giây) và độ trễ (Latency - mili-giây từ khi phát sinh gói tin đến khi có cảnh báo).
+Cấu trúc Báo cáo Đồ án
+Báo cáo nên được soạn thảo trên nền tảng Overleaf (LaTeX) để đảm bảo chuẩn định dạng học thuật, chia thành 5 chương trọng tâm:
+* Chương 1: Mở đầu Trình bày bối cảnh bài toán, lý do chọn đề tài, mục tiêu nghiên cứu và giới hạn phạm vi của hệ thống (tập trung vào NIDS thời gian thực trên AWS).
+* Chương 2: Cơ sở lý thuyết Trình bày các khái niệm nền tảng: Mô hình IaaS của Điện toán đám mây, các dịch vụ AWS (EC2, IAM, S3), cấu trúc của Apache Kafka, và lý thuyết về Machine Learning trong phát hiện xâm nhập mạng.
+* Chương 3: Phân tích và Thiết kế hệ thống Vẽ sơ đồ kiến trúc tổng thể, luồng dữ liệu (Data flow diagram). Đặc tả cấu hình phần cứng đám mây dự kiến. Thiết kế lược đồ cơ sở dữ liệu cho các cảnh báo trên PostgreSQL.
+* Chương 4: Triển khai và Đánh giá kết quả Ghi chép các bước cấu hình IAM, S3 Policies, và lệnh chạy Docker. Trình bày kết quả nhận diện của mô hình ML. Đặc biệt nhấn mạnh vào các biểu đồ đo lường hiệu năng: Throughput và Latency khi hệ thống chịu tải.
+* Chương 5: Tổng kết và Hướng phát triển Tóm tắt các kết quả đã đạt được, những hạn chế hiện tại và đề xuất hướng mở rộng (ví dụ: tự động scale hệ thống phân tích khi Kafka bị nghẽn).
+
+
+Các rủi ro kỹ thuật cần lưu ý & Giải pháp điều chỉnh ở phần 4 giai đoạn 
+Dù kiến trúc rất tốt, nhưng khi bắt tay vào code các bạn sẽ dễ gặp phải các vấn đề sau nếu không lường trước:
+⚠️ Vấn đề 1: Cấu hình RAM của EC2 (Tránh lỗi OOM - Out of Memory)
+* Thực tế: Zookeeper chiếm ~512MB RAM, Kafka broker chiếm tối thiểu 1GB–1.5GB RAM, PostgreSQL chiếm ~256MB–512MB, Python ML Consumer + Pandas/Scikit-learn chiếm ~1GB RAM.
+* Cảnh báo: Nếu dùng gói t2.micro hoặc t3.micro (chỉ có 1GB RAM của Free Tier), máy ảo EC2 sẽ bị tràn RAM và treo máy ngay lập tức khi khởi động Kafka.
+* Giải pháp:
+   * Cần tối thiểu instance t3.medium (2 vCPU, 4GB RAM) hoặc tốt nhất là t3.large (2 vCPU, 8GB RAM).
+   * Bật thêm Swap Memory (RAM ảo) khoảng 2GB–4GB trên EC2 Linux để tránh crash khi tải tăng đột ngột.
+⚠️ Vấn đề 2: Hiệu năng Consumer ML (Nghẽn cổ chai Throughput)
+* Thực tế: Nếu Consumer xử lý theo kiểu nhận từng gói tin for msg in consumer: model.predict([features]), tốc độ dự đoán sẽ rất chậm (chỉ đạt tầm vài chục đến hơn 100 gói/giây do chi phí gọi hàm của Python).
+* Giải pháp: Áp dụng Micro-batching:
+   * Consumer gom khoảng 50–100 gói tin từ Kafka buffer rồi thực hiện model.predict(batch_features) một lần.
+   * Việc này sẽ giúp Throughput vọt lên hàng nghìn gói/giây, số liệu khi làm bài Benchmarking sẽ rất ấn tượng.
+⚠️ Vấn đề 3: Đẩy dữ liệu lên S3 (Tránh bão Request làm tăng chi phí & độ trễ)
+* Thực tế: S3 không phải là cơ sở dữ liệu tốc độ cao cho từng dòng log. Nếu có 10.000 gói tin sạch mà gọi s3.put_object() 10.000 lần:
+   * Consumer sẽ bị lag nghiêm trọng do nghẽn mạng chờ S3 phản hồi.
+   * Bị tính phí API PUT request của AWS.
+* Giải pháp:
+   * Tạo một bộ đệm (Buffer): Gom log traffic sạch trong vòng 30 giây - 1 phút (hoặc đủ 1.000 dòng), xuất ra 1 file .json.gz hoặc .parquet, rồi mới đẩy 1 file đó lên S3.
+⚠️ Vấn đề 4: Tận dụng lại Streamlit Dashboard có sẵn
+* Bạn của bạn dự định dùng DBeaver để xem dữ liệu PostgreSQL. DBeaver rất tốt cho việc kiểm tra bảng và debug dữ liệu.
+* Mẹo nâng cao: File dashboard.py hiện tại trong project của bạn đã có sẵn giao diện SOC Dark Mode rất đẹp. Thay vì để nó chạy random dữ liệu giả, các bạn chỉ cần viết vài dòng SQL truy vấn thẳng vào bảng PostgreSQL (Hot Data) rồi hiển thị lên Streamlit. Khi thuyết trình/báo cáo thực tế, màn hình Dashboard trực quan này sẽ ghi điểm tuyệt đối.
+  
+
+[a]phần này xem lại tham khảo ở thẻ 2 nhé
