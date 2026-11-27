@@ -40,7 +40,7 @@ else
     exit 1
 fi
 
-KAFKA_SERVER="${KAFKA_BOOTSTRAP_SERVERS:-${NIDS_KAFKA:-localhost:9092}}"
+KAFKA_SERVER="${KAFKA_BOOTSTRAP_SERVERS:-${NIDS_KAFKA:-localhost:29092}}"
 export KAFKA_BOOTSTRAP_SERVERS="$KAFKA_SERVER"
 export NIDS_KAFKA="$KAFKA_SERVER"
 export NIDS_DSN="${NIDS_DSN:-postgresql://nids_user:nids_password@localhost:5432/nids_db}"
@@ -105,7 +105,7 @@ run_scenario_normal() {
     $PY -c "
 import os, json
 from kafka import KafkaProducer
-kafka_server = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092')
+kafka_server = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:29092')
 try:
     producer = KafkaProducer(
         bootstrap_servers=[kafka_server],
@@ -132,7 +132,7 @@ run_scenario_ddos() {
     $PY -c "
 import os, json
 from kafka import KafkaProducer
-kafka_server = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092')
+kafka_server = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:29092')
 try:
     producer = KafkaProducer(
         bootstrap_servers=[kafka_server],
@@ -161,7 +161,7 @@ run_scenario_multivector() {
     $PY -c "
 import os, json
 from kafka import KafkaProducer
-kafka_server = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092')
+kafka_server = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:29092')
 try:
     producer = KafkaProducer(
         bootstrap_servers=[kafka_server],

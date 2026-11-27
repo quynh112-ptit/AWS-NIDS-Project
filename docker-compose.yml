@@ -1,36 +1,89 @@
-
+# ============================================================
+# Hạ tầng lõi NIDS trên EC2: Zookeeper + Kafka + PostgreSQL
+# Cổng Kafka công khai: KAFKA_PORT trong .env (mặc định 9092; đặt KAFKA_PORT=9091 khi cần chạy cổng 9091)
+#
+# Biến môi trường đọc từ file .env (xem .env.example):
+#   KAFKA_PUBLIC_HOST  : IP Public của EC2 (start_nids.sh tự điền)
+#   POSTGRES_PASSWORD  : mật khẩu PostgreSQL (KHÔNG commit lên Git)
+#   POSTGRES_BIND      : 127.0.0.1 (mặc định, chỉ nội bộ EC2) hoặc 0.0.0.0
+# ============================================================
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
+    restart: unless-stopped
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
-    ports:
-      - "2181:2181"
+    # Zookeeper chỉ dùng nội bộ giữa các container, không mở ra Internet
+    expose:
+      - "2181"
+    volumes:
+      - zk_data:/var/lib/zookeeper/data
+      - zk_log:/var/lib/zookeeper/log
+    healthcheck:
+      test: ["CMD-SHELL", "echo ruok | nc -w 2 localhost 2181 | grep imok || cub zk-ready localhost:2181 5"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
 
   kafka:
     image: confluentinc/cp-kafka:7.5.0
+    restart: unless-stopped
     depends_on:
-      - zookeeper
+      zookeeper:
+        condition: service_healthy
     ports:
-      - "9092:9092"
+      - "${KAFKA_PORT:-9092}:${KAFKA_PORT:-9092}"  # EXTERNAL: Producer bên ngoài (mở trong Security Group)
+      - "127.0.0.1:29092:29092"  # INTERNAL: tiến trình chạy ngay trên EC2 (không mở ra Internet)
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://98.84.155.236:9092
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      # EXTERNAL :KAFKA_PORT (mặc định 9092) công bố bằng IP Public EC2 cho Producer bên ngoài.
+      # INTERNAL :29092 cho Consumer/Dashboard/script trên chính EC2 → không phụ thuộc
+      # việc Security Group có cho phép EC2 gọi lại IP Public của chính nó hay không.
+      KAFKA_LISTENERS: EXTERNAL://0.0.0.0:${KAFKA_PORT:-9092},INTERNAL://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: EXTERNAL://${KAFKA_PUBLIC_HOST:-localhost}:${KAFKA_PORT:-9092},INTERNAL://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: EXTERNAL:PLAINTEXT,INTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      # Điều phối lưu lượng: 3 partition/topic để chia tải cho nhiều Consumer cùng group
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      # Giữ dữ liệu thô 24h hoặc tối đa 1 GB/partition (bộ đệm để phát lại khi Consumer sập)
+      KAFKA_LOG_RETENTION_HOURS: 24
+      KAFKA_LOG_RETENTION_BYTES: 1073741824
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:29092 --list >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 15s
+      retries: 15
 
   postgres:
     image: postgres:15
+    restart: unless-stopped
     environment:
-      - POSTGRES_USER=nids_user
-      - POSTGRES_PASSWORD=nids_password
-      - POSTGRES_DB=nids_db
+      POSTGRES_USER: ${POSTGRES_USER:-nids_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nids_password}
+      POSTGRES_DB: ${POSTGRES_DB:-nids_db}
     ports:
-      - "5432:5432"
+      # Mặc định chỉ nghe trên 127.0.0.1 của EC2. Đặt POSTGRES_BIND=0.0.0.0 trong .env
+      # nếu thành viên khác cần truy cập từ xa (và nhớ giới hạn IP nguồn trong Security Group).
+      - "${POSTGRES_BIND:-127.0.0.1}:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./tv3/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nids_user} -d ${POSTGRES_DB:-nids_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
 volumes:
   postgres_data:
+  kafka_data:
+  zk_data:
+  zk_log:

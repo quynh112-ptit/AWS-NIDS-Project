@@ -1,8 +1,8 @@
 import os
 import boto3
 
-arn = "arn:aws:sns:us-east-1:400131408828:NIDS-Alerts"
-reg = "us-east-1"
+arn = os.getenv("SNS_TOPIC_ARN", "arn:aws:sns:us-east-1:400131408828:NIDS-Alerts")
+reg = os.getenv("AWS_DEFAULT_REGION", "us-east-1")
 
 print("[*] Testing default credentials (IAM Role / AWS CLI)...")
 sns = boto3.client("sns", region_name=reg)

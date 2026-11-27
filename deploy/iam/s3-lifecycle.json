@@ -1,0 +1,22 @@
+{
+  "Rules": [
+    {
+      "ID": "postgres-backups",
+      "Filter": { "Prefix": "postgres/" },
+      "Status": "Enabled",
+      "Transitions": [ { "Days": 30, "StorageClass": "GLACIER_IR" } ],
+      "Expiration": { "Days": 180 },
+      "NoncurrentVersionExpiration": { "NoncurrentDays": 30 }
+    },
+    {
+      "ID": "cold-events",
+      "Filter": { "Prefix": "events/" },
+      "Status": "Enabled",
+      "Transitions": [
+        { "Days": 30, "StorageClass": "STANDARD_IA" },
+        { "Days": 90, "StorageClass": "GLACIER" }
+      ],
+      "Expiration": { "Days": 365 }
+    }
+  ]
+}

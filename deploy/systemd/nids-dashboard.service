@@ -1,0 +1,15 @@
+[Unit]
+Description=NIDS SOC Dashboard (Streamlit :8501)
+After=docker.service network-online.target
+
+[Service]
+Type=simple
+User=__USER__
+WorkingDirectory=__ROOT__/tv3
+EnvironmentFile=-__ROOT__/.env
+ExecStart=__PY__ -m streamlit run dashboard.py --server.address 0.0.0.0 --server.port 8501 --server.headless true
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
