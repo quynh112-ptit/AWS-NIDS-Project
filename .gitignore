@@ -12,6 +12,8 @@ env/
 # ⚠️ BẢO MẬT - TUYỆT ĐỐI không commit lên GitHub
 .env
 .env.*
+!.env.example
+!.env.*.example
 *.pem
 *.key
 *accessKey*.csv
@@ -20,3 +22,6 @@ env/
 
 # File runtime auto-generated
 shared_attacks.json
+
+# Bản sao lưu cục bộ
+backups/

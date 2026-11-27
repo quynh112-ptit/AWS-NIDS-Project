@@ -8,8 +8,8 @@ sk = os.getenv("AWS_SECRET_ACCESS_KEY", "").strip()
 reg = os.getenv("AWS_REGION", os.getenv("AWS_DEFAULT_REGION", "us-east-1")).strip()
 arn = os.getenv("SNS_TOPIC_ARN", "").strip()
 
-print(f"[*] Access Key: {ak}")
-print(f"[*] Secret Key: {sk[:4]}...{sk[-4:]} (len: {len(sk)})")
+print(f"[*] Access Key: {ak[:4]}****" if ak else "[*] Access Key: (không có - dùng IAM Role)")
+print("[*] Secret Key: " + ("(đã ẩn)" if sk else "(không có)"))
 print(f"[*] Region: {reg}")
 print(f"[*] SNS ARN: {arn}")
 

@@ -60,7 +60,7 @@ Chép URL HTTPS mà ngrok cấp vào NIDS_QR_URL trong .env.tv3. Khởi động 
 
 ## Kết nối EC2 của nhóm
 
-Dùng Public IPv4 hiện tại do TV1 xác nhận. File bàn giao ghi Kafka cổng 9092 và PostgreSQL cổng 5432, database nids_db. Địa chỉ có thể đổi khi EC2 được bật lại. Cập nhật cả địa chỉ broker công bố trong Compose trên EC2 theo cách nhóm vận hành.
+Dùng Public IPv4 hiện tại do TV1 xác nhận. File bàn giao ghi Kafka cổng 9092 (có thể đổi bằng KAFKA_PORT trong .env) và PostgreSQL cổng 5432, database nids_db. Địa chỉ có thể đổi khi EC2 được bật lại. Cập nhật cả địa chỉ broker công bố trong Compose trên EC2 theo cách nhóm vận hành.
 
 Trong .env.tv3, đổi NIDS_KAFKA thành địa chỉ Kafka của EC2, và NIDS_DSN thành chuỗi kết nối PostgreSQL do TV1 cấp. Nhập mật khẩu tại máy và mã hóa URL cho ký tự đặc biệt trong DSN. Tránh đưa file .env.tv3 lên Git. Nếu có tài khoản chỉ đọc cho dashboard, đặt thêm NIDS_READ_DSN. Dashboard chỉ thực hiện SELECT. Consumer cần quyền tạo bảng/chỉ mục và INSERT/SELECT trên nids_events. TV1 có thể cấp quyền trước khi chạy. Hạn chế nguồn truy cập Kafka/PostgreSQL theo cấu hình mạng của nhóm.
 

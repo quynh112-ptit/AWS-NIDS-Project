@@ -1,0 +1,18 @@
+[Unit]
+Description=NIDS ML Consumer (Kafka 9092 -> model -> PostgreSQL + SNS)
+After=docker.service network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+User=__USER__
+WorkingDirectory=__ROOT__/tv3
+EnvironmentFile=-__ROOT__/.env
+ExecStart=__PY__ -u consumer_tv3.py
+# Khôi phục dịch vụ: tự khởi động lại khi tiến trình chết (vd. Kafka tạm mất kết nối)
+Restart=always
+RestartSec=5
+StartLimitIntervalSec=0
+
+[Install]
+WantedBy=multi-user.target
