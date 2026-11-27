@@ -25,3 +25,6 @@ shared_attacks.json
 
 # Bản sao lưu cục bộ
 backups/
+scratch_docx_text.txt
+sheet_raw.html
+*.tmp

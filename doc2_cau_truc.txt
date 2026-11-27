@@ -1,0 +1,98 @@
+﻿Phần 1: Cấu trúc chi tiết Báo cáo Đồ án
+Báo cáo nên được trình bày theo chuẩn học thuật (khuyến khích dùng LaTeX/Overleaf), chia thành 5 chương cốt lõi.
+Chương 1: Tổng quan đề tài
+Chương này giúp hội đồng hiểu bài toán bạn đang giải quyết và lý do chọn giải pháp.
+* 1.1 Đặt vấn đề: Phân tích sự gia tăng của dữ liệu mạng (Big Data) và các lỗ hổng của hệ thống tường lửa/NIDS tĩnh truyền thống. Nêu rõ giới hạn của việc xử lý offline.
+* 1.2 Lý do chọn Điện toán đám mây & AI: Giải thích tại sao lại mang hệ thống lên AWS (tận dụng tính linh hoạt Elasticity, sẵn sàng cao) và tại sao dùng AI (phát hiện mẫu tấn công ẩn).
+* 1.3 Mục tiêu nghiên cứu: Xây dựng luồng xử lý thời gian thực (Real-time pipeline) bắt được gói tin độc hại và tự động bắn cảnh báo qua SMS/Email.
+* 1.4 Phạm vi đề tài: Giới hạn trong việc dùng Kafka làm Message Broker, Random Forest/ML làm lõi phân tích, và AWS (EC2, S3, IAM, SNS) làm hạ tầng.
+Chương 2: Cơ sở lý thuyết
+Cung cấp nền tảng kiến thức công nghệ mà nhóm đã sử dụng. Không copy-paste định nghĩa chung chung, hãy viết gắn liền với dự án.
+* 2.1 Nền tảng Đám mây AWS: Phân tích mô hình IaaS. Trình bày chi tiết về kiến trúc Mạng riêng ảo (VPC), tính toán (EC2), lưu trữ phi cấu trúc (S3 Bucket), và dịch vụ nhắn tin (SNS).
+* 2.2 Bảo mật đám mây: Nguyên lý đặc quyền tối thiểu (Least Privilege) với AWS IAM Roles và Policies (Cách hệ thống bỏ qua việc dùng Access Key để tăng bảo mật).
+* 2.3 Apache Kafka trong Data Streaming: Giải thích cơ chế Topic, Producer (bơm dữ liệu), Consumer (hứng dữ liệu) và lý do Kafka giúp hệ thống không bị "sập" khi có hàng triệu gói tin đổ về cùng lúc.
+* 2.4 Machine Learning cho NIDS: Giới thiệu thuật toán nhóm sử dụng (VD: Random Forest). Các chỉ số đánh giá độ chính xác (Accuracy, False Positive Rate).
+Chương 3: Phân tích và Thiết kế hệ thống
+Đây là chương quan trọng nhất thể hiện chất xám kiến trúc của nhóm.
+* 3.1 Sơ đồ kiến trúc tổng thể (Architecture Diagram): Trình bày sơ đồ luồng dữ liệu đi từ Local -> Kafka (trên EC2) -> NIDS Model -> S3/PostgreSQL/SNS.
+* 3.2 Thiết kế luồng dữ liệu (Data Pipeline): Mô tả luồng Hot Data (Cảnh báo đẩy qua SNS, lưu vào DB) và luồng Cold Data (Đẩy toàn bộ log thô lên S3 để lưu trữ rẻ hạn dài).
+* 3.3 Thiết kế Bảo mật (Security Design): Bảng chi tiết các cổng (Port) được mở trong Security Group (VD: mở port 22 cho SSH, 9092 cho Kafka) và mô tả quyền IAM.
+* 3.4 Thiết kế Cơ sở dữ liệu: Lược đồ thực thể liên kết (ERD) cho bảng lưu trữ cảnh báo, thiết kế các trường lưu thông tin IP, cổng, loại tấn công, thời gian.
+Chương 4: Triển khai và Cấu hình hệ thống
+Trình bày các bước thực hiện kỹ thuật thực tế (có kèm ảnh chụp màn hình).
+* 4.1 Xây dựng hạ tầng AWS: Các bước tạo máy chủ EC2, cấu hình mạng VPC, và áp dụng IAM Role cho EC2.
+* 4.2 Cài đặt Data Streaming: Code docker-compose.yml để dựng Kafka, kịch bản chạy module producer.py để đẩy traffic giả lập.
+* 4.3 Triển khai Lõi ML và Cảnh báo: Trình bày code của consumer_ids.py, đặc biệt là đoạn Boto3 gọi API của Amazon SNS để gửi email/SMS.
+* 4.4 Tích hợp lưu trữ S3: Cấu hình tự động nén dữ liệu và upload lên Amazon S3 qua script Python.
+Chương 5: Đánh giá hiệu năng và Kết luận
+Chứng minh hệ thống chạy tốt trong thực tế.
+* 5.1 Kịch bản kiểm thử (Test Cases): Mô tả cách nhóm giả lập dữ liệu sạch và dữ liệu tấn công. Trình bày ảnh chụp email/SMS cảnh báo nhận được từ AWS SNS.
+* 5.2 Đánh giá Hiệu năng (Benchmarks):
+   * Throughput: Đo lường số gói tin/giây (EPS) mà hệ thống xử lý được trên máy chủ t2.micro.
+   * Latency: Độ trễ từ lúc gói tin vào Kafka đến khi sinh ra cảnh báo.
+* 5.3 Kết luận & Hướng phát triển: Nhấn mạnh việc hệ thống đã giải quyết bài toán thời gian thực và đạt chuẩn bảo mật hạ tầng. Hướng đi mở rộng (dùng Auto Scaling để tự động tăng số lượng server khi Kafka bị quá tải).
+phần 2: các yêu cầu khi xây dựng hệ thống 
+1. Yêu cầu về Môi trường Đám mây (Cloud Environment)
+* Tài khoản AWS: Cần ít nhất 1 tài khoản AWS đang hoạt động.
+   * Lưu ý: Có thể sử dụng gói AWS Free Tier (miễn phí 1 năm cho các dịch vụ cơ bản). Để đăng ký, bạn cần có thẻ thanh toán quốc tế (VISA/Mastercard).
+* Quota dịch vụ AWS cần thiết:Amazon EC2: Cấp quyền khởi tạo ít nhất 2 máy chủ ảo (Khuyến nghị dùng hệ điều hành Ubuntu 22.04 LTS hoặc Amazon Linux, cấu hình t2.micro hoặc t3.small thuộc gói Free Tier).
+   * Amazon S3: Quyền tạo 1 Bucket để lưu trữ log lạnh.
+   * AWS IAM: Quyền tạo Role và chỉnh sửa Policy (cực kỳ quan trọng để cấp quyền cho EC2 gửi cảnh báo).
+   * Amazon SNS: Quyền tạo Topic và Subscriptions (Email/SMS).
+2. Yêu cầu về Phần mềm & Công cụ Phát triển (Software & Tools)
+* Trên máy tính cá nhân (Local Machine):
+   * IDE/Trình soạn thảo: Visual Studio Code (VS Code).
+   * Python: Phiên bản Python 3.9 đến 3.11 (để tương thích tốt nhất với các thư viện AI mà không bị lỗi C++ Build Tools).
+   * Docker Desktop: Dùng để chạy thử Kafka và Zookeeper ở máy cá nhân trước khi đưa code lên máy chủ AWS.
+   * Git: Dùng để đẩy code lên GitHub.
+   * Công cụ Quản trị CSDL: DBeaver (dùng để kết nối từ máy cá nhân lên cơ sở dữ liệu PostgreSQL trên đám mây để xem log và vẽ biểu đồ).
+* Thư viện lập trình (Libraries): Bắt buộc phải có kafka-python-ng (giao tiếp Kafka), scikit-learn (chạy mô hình ML), pandas & numpy (tiền xử lý dữ liệu), và boto3 (giao tiếp với AWS).
+3. Yêu cầu về Dữ liệu (Dataset)
+Vì đây là bài toán Học máy (Machine Learning), hệ thống không thể tự nhiên biết đâu là mã độc. Nhóm cần:
+* Tập dữ liệu huấn luyện (Benchmark Dataset): Cần tải một bộ dữ liệu tiêu chuẩn về an toàn mạng đã được gán nhãn sẵn (có chứa các luồng traffic bình thường và traffic tấn công như DDoS, PortScan, Brute Force).
+   * Gợi ý các tập dữ liệu phổ biến: CICIDS-2017, NSL-KDD, hoặc UNSW-NB15 (Có thể dễ dàng tìm và tải miễn phí trên Kaggle).
+* Mô hình đã huấn luyện (Pre-trained Model): File đóng gói thuật toán AI (thường có đuôi .pkl hoặc .joblib) sau khi nhóm đã train xong trên dữ liệu, dung lượng cần đủ nhẹ (dưới 100MB) để nạp nhanh vào bộ nhớ của máy chủ EC2.
+4. Yêu cầu về Kiến thức Kỹ năng (Prerequisites)
+Để chia việc trơn tru cho 4 thành viên, nhóm cần trang bị các kỹ năng cốt lõi:
+* Kỹ năng Linux: Biết cách dùng SSH (qua Terminal hoặc PuTTY) để điều khiển máy chủ EC2 từ xa, biết các lệnh cơ bản để cài đặt Docker và chạy mã Python trên Ubuntu.
+* Kỹ năng Cloud Security: Nắm được khái niệm Security Group trên AWS (chỉ mở những cổng thực sự cần thiết, ví dụ đóng toàn bộ, chỉ mở port 22 cho admin và port 9092 cho nội bộ 2 máy EC2 giao tiếp).
+* Kỹ năng làm việc nhóm: Bắt buộc phải dùng Git/GitHub để đồng bộ code, tránh tình trạng "code chạy được trên máy tôi nhưng lỗi trên máy bạn".’
+ Mẹo tối ưu chi phí cho Sinh viên: Trong quá trình làm đồ án, khi không code hoặc không chạy test, hãy vào AWS Console và Stop (Dừng) các máy chủ EC2 lại. Nếu bạn để máy chạy 24/7 suốt nhiều tháng, có thể sẽ bị lố giới hạn miễn phí 750 giờ/tháng của AWS Free Tier. Việc thiết lập cảnh báo Billing Alert trên AWS ngay từ ngày đầu tiên cũng là một yêu cầu "ngầm" rất cần thiết.
+phần 3: kiến trúc hệ thống 
+1. Tầng sinh dữ liệu (Local / External)
+* Thành phần này nằm ngoài đám mây, đóng vai trò mô phỏng luồng dữ liệu mạng.
+AWS NIDS Data Pipeline Architecture-2026-11-03-105822.jpg
+* Một kịch bản giả lập (producer.py) được sử dụng để liên tục tạo và đẩy lưu lượng NetFlow ở tốc độ cao thông qua Port 9092 vào hệ thống trung tâm.
+AWS NIDS Data Pipeline Architecture-2026-11-03-105822.jpg
+2. Đám mây AWS - Lõi xử lý Streaming
+   * Phân hệ này nằm trong mạng riêng ảo (AWS VPC - Private) đảm bảo tính cách ly và bảo mật.
+AWS NIDS Data Pipeline Architecture-2026-11-03-105822.jpg
+   * AWS EC2 Instance 1: Đóng vai trò là trạm trung chuyển thông điệp, chạy Apache Kafka và Zookeeper bên trong môi trường Docker.
+AWS NIDS Data Pipeline Architecture-2026-11-03-105822.jpg
+   * AWS EC2 Instance 2: Nhận luồng dữ liệu (Stream Data) từ máy chủ 1 qua Kafka topic network-traffic. Máy chủ này chạy lõi Machine Learning NIDS (consumer_ids.py) để phân tích và phát hiện xâm nhập.
+AWS NIDS Data Pipeline Architecture-2026-11-03-105822.jpg+ 1
+3. Tầng lưu trữ (Storage) và Phân luồng Dữ liệu
+Sau khi qua lõi ML, dữ liệu được phân nhánh theo độ khẩn cấp:
+      * Hot Data (Dữ liệu nóng): Các cảnh báo tấn công được máy chủ EC2 số 2 ghi trực tiếp vào cơ sở dữ liệu quan hệ PostgreSQL / Amazon RDS để phục vụ truy vấn tốc độ cao.
+AWS NIDS Data Pipeline Architecture-2026-11-03-105822.jpg
+      * Cold Data (Dữ liệu lạnh): Toàn bộ log mạng thô (dù an toàn hay độc hại) được đẩy vào Amazon S3 Bucket để lưu trữ dài hạn.
+AWS NIDS Data Pipeline Architecture-2026-11-03-105822.jpg
+4. Tầng bảo mật, Cảnh báo & Người quản trị
+         * Kiểm soát truy cập: Thay vì dùng mật khẩu, AWS IAM Role được cấu hình nối trực tiếp với EC2 Instance 2, cấp cơ chế ủy quyền ngầm (không cần mật khẩu) để máy chủ này có quyền ghi dữ liệu lên S3 và gọi dịch vụ SNS.
+AWS NIDS Data Pipeline Architecture-2026-11-03-105822.jpg
+         * Hệ thống cảnh báo: Khi mô hình ML phát hiện IP lạ, nó sẽ trigger dịch vụ Amazon SNS thông qua Boto3 API. Amazon SNS sau đó tự động gửi SMS hoặc Email trực tiếp đến điện thoại của người quản trị Admin.
+AWS NIDS Data Pipeline Architecture-2026-11-03-105822.jpg+ 1
+         * Trực quan hóa: Người quản trị sử dụng phần mềm DBeaver kết nối vào PostgreSQL để truy vấn dữ liệu và vẽ biểu đồ giám sát hệ thống.
+AWS NIDS Data Pipeline Architecture-2026-11-03-105822.jpg
+
+
+  
+
+>> phân tích mồm: 
+Bắt đầu từ phía ngoài cùng, chỗ "Tầng sinh dữ liệu", cứ tưởng tượng cái script producer.py đóng vai trò như một nguồn phát mạng thực tế. Nó sẽ liên tục nhồi các luồng dữ liệu (NetFlow) và bắn với tốc độ cực cao, chui qua cổng 9092 để đi thẳng vào đám mây AWS.
+Khi dữ liệu bay vào môi trường mạng kín (Private VPC) của AWS, trạm dừng chân đầu tiên của nó là máy chủ EC2 số 1. Máy này chạy Apache Kafka, đóng vai trò như một cái "bưu điện" hoặc cái phễu khổng lồ. Nó hứng toàn bộ luồng traffic bắn vào để hệ thống không bị nghẽn mạng, rồi xếp gọn gàng dữ liệu vào một khoang chờ (topic) có tên là network-traffic.
+Ngay lúc đó, máy chủ EC2 số 2 chạy script consumer_ids.py sẽ vào việc. Nó giống như một người bảo vệ, liên tục kéo dữ liệu từ cái "bưu điện" Kafka kia ra. Bên trong máy này có cài sẵn lõi Machine Learning để "soi" từng gói tin xem có an toàn không. Xử lý xong, luồng dữ liệu sẽ lập tức rẽ ra 3 nhánh:
+            * Nhánh 1 (Cất vào kho lạnh): Dù gói tin đó là bình thường hay độc hại, toàn bộ log mạng thô đều được đẩy tuốt vào kho Amazon S3 Bucket (Cold Data). Chỗ này lưu trữ siêu rẻ, cứ vứt đó sau này cần kiểm toán hay huấn luyện lại AI thì lấy ra dùng.
+            * Nhánh 2 (Ghi sổ đen): Nếu gói tin bị mô hình AI "bắt quả tang" là tấn công, lập tức thông tin của nó được ghi ngay vào cơ sở dữ liệu quan hệ PostgreSQL (Hot Data). Mục đích là để lưu vết và phục vụ truy vấn tốc độ cao sau này.
+            * Nhánh 3 (Báo động khẩn): Đồng thời lúc phát hiện IP lạ, máy EC2 số 2 sẽ gọi API qua Boto3 để "kích hoạt" dịch vụ báo động Amazon SNS. (Có một điểm kỹ thuật rất hay ở đoạn này là máy số 2 đẩy dữ liệu sang S3 và SNS mà không hề cần dùng đến mật khẩu, vì nó đã được AWS gán cho một cái "thẻ bài" IAM Role để ủy quyền ngầm rồi).
+Cuối cùng, ở chặng đích phía người quản trị (Admin): Hệ thống Amazon SNS nhận được lệnh sẽ tự động đẩy một tin nhắn SMS hoặc Email báo động thẳng vào điện thoại của Admin. Cùng lúc đó, nếu Admin muốn phân tích sâu hơn, họ chỉ việc mở công cụ DBeaver lên, chọc thẳng vào cái PostgreSQL kia là có thể truy vấn và vẽ ngay được biểu đồ thống kê các cuộc tấn công. Toàn bộ quy trình này diễn ra theo thời gian thực và khép kín hoàn toàn!
